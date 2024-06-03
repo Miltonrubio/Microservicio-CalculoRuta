@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO con Express</title>
+</head>
+
+<body>
+    <h1>Comunicación en Tiempo Real con Socket.IO</h1>
+
+    <ul id="mensajes"></ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const mensajes = document.getElementById('mensajes');
+
+        socket.on('ubi:vehiculo', (data) => {
+            if (Array.isArray(data) && data.length > 0) {
+                const ubicacion = data[0]; // Acceder al primer objeto en el arreglo
+                const li = document.createElement('li');
+                li.textContent = `latitude: ${data.latitude}, longitude: ${data.longitude} UltimoID : ${data.ID}`;
+                mensajes.appendChild(li);
+            } else {
+                const li = document.createElement('li');
+                li.textContent = `latitude: ${data.latitude}, longitude: ${data.longitude} UltimoID : ${data.ID}`;
+                mensajes.appendChild(li);
+                console.error('Datos no válidos recibidos:', data);
+            }
+        });
+
+
+        /*
+                socket.on('mensaje', (data) => {
+                    const li = document.createElement('li');
+                    li.textContent = data;
+                    mensajes.appendChild(li);
+                });
+                */
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.io Client</title>
+  <script src="socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Socket.io Client</h1>
+  <pre id="data"></pre>
+
+  <script>
+    const socket = io('http://localhost:3000');
+
+    socket.on('pointsData', (points) => {
+      document.getElementById('data').textContent = JSON.stringify(points, null, 2);
+    });
+
+    // Simular la petición a la API para obtener los datos
+    fetch('http://localhost:3000/fetch-and-send-data')
+      .then(response => response.text())
+      .then(data => console.log(data))
+      .catch(error => console.error('Error:', error));
+  </script>
+</body>
+</html>
