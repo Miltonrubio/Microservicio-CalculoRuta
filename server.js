@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const cors = require("cors");
-const socketIo = require('socket.io');
 const { Server } = require("socket.io");
 const axios = require('axios');
 const geolib = require('geolib');
@@ -32,8 +31,8 @@ let historialUbicaciones = [];
 let intervalo;
 
 // Inicializar rutas
-tomarRuta2("33");
-tomarRuta("33");
+tomarRuta2("20");
+tomarRuta("20");
 
 io.on('connection', (socket) => {
   console.log('Nuevo cliente conectado');
@@ -52,63 +51,52 @@ io.on('connection', (socket) => {
     }
     console.log('Cliente desconectado');
   });
-
   socket.on('buscar:puntoCercano', (coordenadas) => {
     const { latitud, longitud } = coordenadas;
     const puntoCercano = buscarPuntoMasCercano(latitud, longitud);
+
     if (puntoCercano) {
       if (historialUbicaciones.length > 0) {
         const vehiculoPosicion = historialUbicaciones[historialUbicaciones.length - 1];
         const indiceVehiculo = buscarIndicePuntoMasCercano(vehiculoPosicion.latitude, vehiculoPosicion.longitude);
         const indicePuntoCercano = buscarIndicePuntoMasCercano(latitud, longitud);
 
-        if (indiceVehiculo !== -1 && indicePuntoCercano !== -1 && indiceVehiculo < indicePuntoCercano) {
-          let distanciaTotal = 0;
-          for (let i = indiceVehiculo; i < indicePuntoCercano; i++) {
-            distanciaTotal += geolib.getDistance(
-              { latitude: parseFloat(puntosRestantes[i].latitud), longitude: parseFloat(puntosRestantes[i].longitud) },
-              { latitude: parseFloat(puntosRestantes[i + 1].latitud), longitude: parseFloat(puntosRestantes[i + 1].longitud) }
-            );
-          }
+        if (indiceVehiculo !== -1 && indicePuntoCercano !== -1) {
+          if (indiceVehiculo < indicePuntoCercano) {
+            let distanciaTotal = 0;
+            for (let i = indiceVehiculo; i < indicePuntoCercano; i++) {
+              distanciaTotal += geolib.getDistance(
+                { latitude: parseFloat(puntosRestantes[i].latitud), longitude: parseFloat(puntosRestantes[i].longitud) },
+                { latitude: parseFloat(puntosRestantes[i + 1].latitud), longitude: parseFloat(puntosRestantes[i + 1].longitud) }
+              );
+            }
 
-          const velocidadVehiculo = 10 * 1000 / 3600; // Convertir 10 km/h a m/s
-          const tiempoEstimado = distanciaTotal / velocidadVehiculo; // Tiempo en segundos
-          socket.emit('resultado:puntoCercano', { puntoCercano, distancia: distanciaTotal, tiempoEstimado });
+            const velocidadVehiculo = 10 * 1000 / 3600; // Convertir 10 km/h a m/s
+            const tiempoEstimado = distanciaTotal / velocidadVehiculo; // Tiempo en segundos
+            socket.emit('resultado:puntoCercano', { puntoCercano, distancia: distanciaTotal, tiempoEstimado });
+          } else {
+            socket.emit('resultado:puntoCercano', { puntoCercano, mensaje: 'El vehículo ya ha pasado por este punto.', distancia: null, tiempoEstimado: null });
+          }
         } else {
-          socket.emit('resultado:puntoCercano', { puntoCercano, distancia: null, tiempoEstimado: null });
+          socket.emit('resultado:puntoCercano', { puntoCercano, mensaje: 'No se pudo encontrar la ubicación del vehículo o del punto cercano.', distancia: null, tiempoEstimado: null });
         }
       } else {
-        socket.emit('resultado:puntoCercano', { puntoCercano, distancia: null, tiempoEstimado: null });
+        socket.emit('resultado:puntoCercano', { puntoCercano, mensaje: 'No hay historial de ubicaciones disponibles.', distancia: null, tiempoEstimado: null });
       }
     } else {
       socket.emit('error', 'No se encontró un punto cercano en la ruta.');
     }
   });
+
+
 });
+
+
 
 function TomarYEnviarUbicaciones() {
   TomarUbicacionesPorRatos()
     .then(ubicacionVehiculo => {
       if (ubicacionVehiculo && ubicacionVehiculo.length > 0) {
-
-
-//let heading = ubicacionVehiculo[0].course;
-        const postData = {
-          routeId: 33,
-          latitude: ubicacionVehiculo[0].latitude,
-          longitude: ubicacionVehiculo[0].longitude
-        };
-// console.log  ("heading : " + heading)
-
-        axios.post('http://192.168.16.114:3000/api/geofence/next', postData)
-          .then(response => {
-            console.log('Respuesta del servidor:', response.data);
-            io.sockets.emit("geocerca:actual", response.data);
-
-          })
-          .catch(error => {
-            console.error('Error en la solicitud POST:', error);
-          });
 
         const vehiculoPosicion = {
           latitude: parseFloat(ubicacionVehiculo[0].latitude),
@@ -136,9 +124,32 @@ function TomarYEnviarUbicaciones() {
         });
 
         console.log("Punto más cercano:", puntoMasCercano);
-        console.log("Distancia al punto más cercano:", distanciaMinima);
+        // console.log("Distancia al punto más cercano:", distanciaMinima);
 
         // Calcular la distancia al siguiente punto en la ruta
+
+        const postData = {
+          routeId: 20,
+          pointId: puntoMasCercano.punto_id
+
+          /*
+          latitude: ubicacionVehiculo[0].latitude,
+          longitude: ubicacionVehiculo[0].longitude
+          */
+        };
+
+        axios.post('http://192.168.1.88:3000/api/geofence/next', postData)
+          .then(response => {
+            console.log('Respuesta del servidor:', response.data);
+            io.sockets.emit("geocerca:actual", response.data);
+
+          })
+          .catch(error => {
+            console.error('Error en la solicitud POST:', error);
+          });
+
+
+
         let distanciaAlSiguientePunto = null;
         if (puntoMasCercano) {
           const indicePuntoMasCercano = puntosRestantes.indexOf(puntoMasCercano);
@@ -150,14 +161,14 @@ function TomarYEnviarUbicaciones() {
 
             distanciaAlSiguientePunto = geolib.getDistance(vehiculoPosicion, siguientePunto);
             io.sockets.emit("ubi:distanciaSiguientePunto", distanciaAlSiguientePunto);
-            console.log("Distancia al siguiente punto:", distanciaAlSiguientePunto);
+            //     console.log("Distancia al siguiente punto:", distanciaAlSiguientePunto);
 
             // Calcular el tiempo estimado de llegada
             const velocidadVehiculo = 10 * 1000 / 3600; // Convertir 10 km/h a m/s
             const tiempoEstimado = distanciaAlSiguientePunto / velocidadVehiculo; // Tiempo en segundos
 
             io.sockets.emit("ubi:tiempoEstimado", tiempoEstimado);
-            console.log("Tiempo estimado al siguiente punto (segundos):", tiempoEstimado);
+            //     console.log("Tiempo estimado al siguiente punto (segundos):", tiempoEstimado);
           } else {
             console.error("No hay un siguiente punto en la ruta.");
           }
@@ -166,7 +177,7 @@ function TomarYEnviarUbicaciones() {
         puntosRestantes = puntosRestantes.filter((punto, index) => {
           const puntoPosicion = {
             latitude: parseFloat(punto.latitud),
-            longitude: parseFloat(punto.longitud)
+            longitude: parseFloat(punto.longitud),
           };
           const distancia = geolib.getDistance(vehiculoPosicion, puntoPosicion);
 
@@ -253,12 +264,12 @@ function TomarUbicacionesPorRatos() {
 }
 
 function tomarRuta(datos) {
-  axios.get(`http://192.168.16.114:3000/api/route/${datos}`)
+  axios.get(`http://192.168.1.88:3000/api/route/${datos}`)
     .then(response => {
       rutaCompleta = response.data.points;
       puntosRestantes = [...rutaCompleta];
-      console.log("Ruta completa obtenida:", rutaCompleta);
-      console.log("Puntos de la ruta:", puntosRestantes);
+      //  console.log("Ruta completa obtenida:", rutaCompleta);
+      // console.log("Puntos de la ruta:", puntosRestantes);
     })
     .catch(error => {
       console.error('Error al hacer la petición:', error);
@@ -266,7 +277,7 @@ function tomarRuta(datos) {
 }
 
 function tomarRuta2(datos) {
-  axios.get(`http://192.168.16.114:3000/api/route/${datos}`)
+  axios.get(`http://192.168.1.88:3000/api/route/${datos}`)
     .then(response => {
       rutaCompleta2 = response.data.points;
     })
