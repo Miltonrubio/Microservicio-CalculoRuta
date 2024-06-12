@@ -19,6 +19,10 @@ const io = new Server(httpServer, {
   }
 });
 
+
+
+let ipApi = '192.168.16.113'
+
 let ultimoId = '0';
 let clientesConectados = 0;
 let rutaCompleta2 = [];
@@ -31,7 +35,7 @@ let historialUbicaciones = [];
 let intervalo;
 
 
-let solicitudesClientes = []; // Almacenar solicitudes de clientes
+let solicitudesClientes = [];
 
 const numeroRuta = 39;
 
@@ -341,7 +345,7 @@ function TomarYEnviarUbicaciones() {
           routeId: numeroRuta,
           pointId: puntoMasCercano.punto_id
         };
-        axios.post('http://192.168.1.88:3000/api/geofence/next', postData)
+        axios.post(`http://${ipApi}:3000/api/geofence/next`, postData)
           .then(response => {
             console.log('Respuesta del servidor:', response.data);
             io.sockets.emit("geocerca:actual", response.data);
@@ -468,7 +472,7 @@ function TomarUbicacionesPorRatos() {
 }
 
 function tomarRuta(datos) {
-  axios.get(`http://192.168.1.88:3000/api/route/${datos}`)
+  axios.get(`http://${ipApi}:3000/api/route/${datos}`)
     .then(response => {
       rutaCompleta = response.data.points;
       puntosRestantes = [...rutaCompleta];
@@ -483,7 +487,7 @@ function tomarRuta(datos) {
 
 //Se usa un socket para mostrar la ruta en otro archivo ignoralo jeje
 function tomarRuta2(datos) {
-  axios.get(`http://192.168.1.88:3000/api/route/${datos}`)
+  axios.get(`http://${ipApi}:3000/api/route/${datos}`)
     .then(response => {
       rutaCompleta2 = response.data.points;
     })

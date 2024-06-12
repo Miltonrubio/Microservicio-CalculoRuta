@@ -1,11 +1,21 @@
-
+/*
 const mysql = require('mysql');
 
 const connection = mysql.createConnection({
-  host: 'localhost',
+  host: 'mysql',
   user: 'root',
-  password: '',
-  database: 'pruebanode'
+  password: 'root',
+  database: 'prueba'
 });
+module.exports = connection;
 
+*/
+
+const mysql = require('mysql');
+const connection = mysql.createConnection({
+  host: 'mysql',
+  user: 'user', 
+  password: 'pass1234', 
+  database: 'prueba'
+});
 module.exports = connection;

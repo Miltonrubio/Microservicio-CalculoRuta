@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  nodeapp:
+    build: .
+    container_name: nodeapp
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=prueba
+      - DB_NAME=servicioBD
+    volumes:
+      - ./servicio:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - app-network
+
+  db:
+    image: mysql:5.7
+    container_name: mysqldb
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=prueba
+      - MYSQL_DATABASE=servicioBD
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:

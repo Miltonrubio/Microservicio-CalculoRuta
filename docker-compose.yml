@@ -1,0 +1,50 @@
+version: '3.3'
+services:
+  mysql:
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=prueba
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass1234
+    volumes:
+      - mysql_data:/var/lib/mysql:rw
+    networks:
+      - my_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - 8081:80
+    environment:
+      - PMA_HOST=mysql
+    depends_on:
+      - mysql
+    networks:
+      - my_network
+
+  node_app:
+    build:
+      context: .
+    ports:
+      - "4000:3000"
+    volumes:
+      - .:/appNode
+    working_dir: /appNode
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=user
+      - DB_PASSWORD=pass1234
+      - DB_NAME=prueba
+    depends_on:
+      - mysql
+    networks:
+      - my_network
+
+volumes:
+  mysql_data:
+
+networks:
+  my_network:
