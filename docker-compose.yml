@@ -11,6 +11,7 @@ services:
       - MYSQL_PASSWORD=pass1234
     volumes:
       - mysql_data:/var/lib/mysql:rw
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - my_network
 
